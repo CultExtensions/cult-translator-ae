@@ -1,0 +1,89 @@
+===========================================================
+             CULT TRANSLATOR — LICENSE AGREEMENT
+===========================================================
+
+Version 1.0 — © 2025 Cult Extensions. All rights reserved.
+
+By downloading, installing, or using Cult Translator ("the Software"),
+you agree to the following terms and conditions.
+
+-----------------------------------------------------------
+1. LICENSE GRANT
+-----------------------------------------------------------
+You are granted a limited, non-exclusive, non-transferable license
+to install and use one copy of the Software on a single computer
+for your own professional or personal projects.
+
+-----------------------------------------------------------
+2. OWNERSHIP
+-----------------------------------------------------------
+All intellectual property rights in and to the Software, including
+but not limited to its code, design, and branding, remain the sole
+property of Cult Extensions. This Agreement does not transfer any
+ownership rights.
+
+-----------------------------------------------------------
+3. RESTRICTIONS
+-----------------------------------------------------------
+You may not copy, modify, adapt, translate, decompile, reverse
+engineer, distribute, resell, rent, lease, or sublicense the
+Software or any of its components.
+You may not use the Software to create a competing product or
+service.
+
+-----------------------------------------------------------
+4. ACTIVATION AND VALIDATION
+-----------------------------------------------------------
+An internet connection is required for license validation and
+software updates. Each license key is bound to a single computer.
+To transfer your license to another device, contact support.
+
+-----------------------------------------------------------
+5. TERMINATION
+-----------------------------------------------------------
+Cult Extensions reserves the right to suspend or revoke licenses
+that violate this Agreement or exceed the permitted number of
+device activations.
+Upon termination, you must cease all use of the Software and delete
+all related files.
+
+-----------------------------------------------------------
+6. UPDATES AND CHANGES
+-----------------------------------------------------------
+Cult Extensions may release updates, patches, or new versions of
+the Software. Continued use of the Software after such updates
+constitutes acceptance of the modified terms.
+
+-----------------------------------------------------------
+7. DISCLAIMER OF WARRANTIES
+-----------------------------------------------------------
+The Software is provided “AS IS” without warranty of any kind,
+express or implied, including but not limited to merchantability,
+fitness for a particular purpose, and non-infringement.
+
+-----------------------------------------------------------
+8. LIMITATION OF LIABILITY
+-----------------------------------------------------------
+In no event shall Cult Extensions or its affiliates be liable for
+any damages arising from the use or inability to use the Software,
+even if advised of the possibility of such damages.
+
+-----------------------------------------------------------
+9. GOVERNING TERMS
+-----------------------------------------------------------
+This Agreement constitutes the entire understanding between you
+and Cult Extensions regarding the Software.
+If any provision is found unenforceable, the remaining provisions
+shall remain in full force and effect.
+
+-----------------------------------------------------------
+SUPPORT AND CONTACT
+-----------------------------------------------------------
+For support or license inquiries, contact:
+
+    ✉  cult.translator@cultextensions.com
+    🌐  https://cultextensions.com
+
+===========================================================
+             END OF LICENSE AGREEMENT
+===========================================================
