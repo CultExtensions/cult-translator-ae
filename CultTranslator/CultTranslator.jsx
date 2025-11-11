@@ -59,6 +59,17 @@
     function run(cmd){ try{ return system.callSystem(cmd) || ""; }catch(e){ return ""; } }
     function alertIf(s){ try{ alert(s); }catch(e){} }
 
+    // --- universalized matchNames for text access ---
+    var TEXT_PROPS_MATCHNAME = "ADBE Text Properties";
+    var TEXT_DOC_MATCHNAME   = "ADBE Text Document";
+
+    function getSourceTextProp(layer) {
+        if (!layer || layer.matchName !== "ADBE Text Layer") return null;
+        var textProps = layer.property(TEXT_PROPS_MATCHNAME);
+        if (!textProps) return null;
+        return textProps.property(TEXT_DOC_MATCHNAME) || null;
+    }
+
     // --- get a simple, stable device id (cross-platform) ---
     function getDeviceId(){
         var name;
@@ -82,7 +93,9 @@
             if (!licFile.exists) return "";
             if (!licFile.open("r")) return "";
             var txt = licFile.read(); licFile.close();
-            var obj = eval("(" + txt + ")");
+
+            // Prefer JSON.parse; fallback to eval only if JSON is unavailable.
+            var obj = (typeof JSON !== "undefined" && JSON.parse) ? JSON.parse(txt) : eval("(" + txt + ")");
             var k = obj && obj.license ? (""+obj.license) : "";
             return trim(k);
         }catch(e){
@@ -394,7 +407,8 @@
 
             for (i2=0;i2<layers.length;i2++){
                 var L = layers[i2];
-                var sp = L.property("Source Text"); if (!sp) continue;
+                var sp = getSourceTextProp(L); // universalized access
+                if (!sp) continue;
                 var doc = sp.value;
                 var src = doc.text || "";
 
