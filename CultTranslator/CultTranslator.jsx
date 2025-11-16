@@ -214,122 +214,126 @@
         return s;
     }
 
+    // === UPGRADE DIALOG (UI TWEAKS ONLY) ===
     function showTrialUpgradeDialog(reasonText){
-    var dlg = new Window("dialog", "Cult Translator — Upgrade");
-    dlg.orientation = "column";
-    dlg.alignChildren = ["fill","top"];
-    dlg.margins = 16;
-    dlg.spacing = 10;
+        var dlg = new Window("dialog", "Cult Translator — Upgrade");
+        dlg.orientation = "column";
+        dlg.alignChildren = ["fill","top"];
+        dlg.margins = 16;
+        dlg.spacing = 10;
 
-    // Top bar with X close button
-    var topBar = dlg.add("group");
-    topBar.orientation = "row";
-    topBar.alignChildren = ["fill","center"];
-    topBar.alignment = ["fill","top"];
+        // Top bar with small ✕ close button
+        var topBar = dlg.add("group");
+        topBar.orientation = "row";
+        topBar.alignChildren = ["right","top"];
+        topBar.alignment = ["fill","top"];
+        topBar.margins = 0;
 
-    // filler to push X to the right
-    topBar.add("statictext", undefined, "");
-    var btnCloseX = topBar.add("button", undefined, "X");
-    btnCloseX.preferredSize = [24, 24];
-    btnCloseX.onClick = function(){ dlg.close(); };
+        var filler = topBar.add("statictext", undefined, "");
+        filler.alignment = ["fill","top"];
 
-    var msg = dlg.add("statictext", undefined, "You’ve reached the limits of the free trial.", {multiline:true});
-    msg.maximumSize.width = 380;
+        var btnCloseX = topBar.add("button", undefined, "✕");
+        btnCloseX.preferredSize = [20, 20];
+        btnCloseX.alignment = ["right","top"];
+        btnCloseX.onClick = function(){ dlg.close(); };
 
-    var msg2 = dlg.add("statictext", undefined,
-        reasonText || "To keep using Cult Translator in your daily workflow, choose a plan below.",
-        {multiline:true}
-    );
-    msg2.maximumSize.width = 380;
+        var msg = dlg.add("statictext", undefined, "You’ve reached the limits of the free trial.", {multiline:true});
+        msg.maximumSize.width = 380;
 
-    var groupPlans = dlg.add("group");
-    groupPlans.orientation = "column";
-    groupPlans.alignChildren = ["fill","top"];
-    groupPlans.spacing = 10;
-
-    // ===== Yearly plan block =====
-    var yearlyPanel = groupPlans.add("panel", undefined, "");
-    yearlyPanel.orientation = "column";
-    yearlyPanel.alignChildren = ["fill","top"];
-    yearlyPanel.margins = 8;
-    yearlyPanel.spacing = 4;
-
-    var yearlyHeader = yearlyPanel.add("group");
-    yearlyHeader.orientation = "row";
-    yearlyHeader.alignChildren = ["left","center"];
-    var yearlyLabel = yearlyHeader.add("statictext", undefined, "Yearly");
-    try {
-        yearlyLabel.graphics.font = ScriptUI.newFont(
-            yearlyLabel.graphics.font.name,
-            ScriptUI.FontStyle.BOLD,
-            yearlyLabel.graphics.font.size
+        var msg2 = dlg.add("statictext", undefined,
+            reasonText || "To keep using Cult Translator in your daily workflow, choose a plan below.",
+            {multiline:true}
         );
-    } catch(e){}
-    yearlyHeader.add("statictext", undefined, " — Save 35% · US$59/year");
+        msg2.maximumSize.width = 380;
 
-    yearlyPanel.add("statictext", undefined, "- Our most popular plan.");
-    yearlyPanel.add("statictext", undefined, "- Full access to all features.");
-    yearlyPanel.add("statictext", undefined, "- Ideal for studios, agencies and teams.");
+        var groupPlans = dlg.add("group");
+        groupPlans.orientation = "column";
+        groupPlans.alignChildren = ["fill","top"];
+        groupPlans.spacing = 10;
 
-    // ===== Monthly plan block =====
-    var monthlyPanel = groupPlans.add("panel", undefined, "");
-    monthlyPanel.orientation = "column";
-    monthlyPanel.alignChildren = ["fill","top"];
-    monthlyPanel.margins = 8;
-    monthlyPanel.spacing = 4;
+        // ===== Yearly plan block =====
+        var yearlyPanel = groupPlans.add("panel", undefined, "");
+        yearlyPanel.orientation = "column";
+        yearlyPanel.alignChildren = ["fill","top"];
+        yearlyPanel.margins = 8;
+        yearlyPanel.spacing = 4;
 
-    var monthlyHeader = monthlyPanel.add("group");
-    monthlyHeader.orientation = "row";
-    monthlyHeader.alignChildren = ["left","center"];
-    var monthlyLabel = monthlyHeader.add("statictext", undefined, "Monthly");
-    try {
-        monthlyLabel.graphics.font = ScriptUI.newFont(
-            monthlyLabel.graphics.font.name,
-            ScriptUI.FontStyle.BOLD,
-            monthlyLabel.graphics.font.size
-        );
-    } catch(e){}
-    monthlyHeader.add("statictext", undefined, " — US$7.90/month");
+        var yearlyHeader = yearlyPanel.add("group");
+        yearlyHeader.orientation = "row";
+        yearlyHeader.alignChildren = ["left","center"];
+        var yearlyLabel = yearlyHeader.add("statictext", undefined, "Yearly");
+        try {
+            yearlyLabel.graphics.font = ScriptUI.newFont(
+                yearlyLabel.graphics.font.name,
+                ScriptUI.FontStyle.BOLD,
+                yearlyLabel.graphics.font.size
+            );
+        } catch(e){}
+        yearlyHeader.add("statictext", undefined, " — Save 35% · US$59/year");
 
-    monthlyPanel.add("statictext", undefined, "- Full access to all features.");
-    monthlyPanel.add("statictext", undefined, "- Flexible option for freelancers and small teams.");
+        yearlyPanel.add("statictext", undefined, "- Our most popular plan.");
+        yearlyPanel.add("statictext", undefined, "- Full access to all features.");
+        yearlyPanel.add("statictext", undefined, "- Ideal for studios, agencies and teams.");
 
-    // ===== Buttons: side by side, same size =====
-    var buttons = dlg.add("group");
-    buttons.orientation = "row";
-    buttons.alignChildren = ["center","center"];
-    buttons.alignment = ["center","top"];
-    buttons.spacing = 10;
+        // ===== Monthly plan block =====
+        var monthlyPanel = groupPlans.add("panel", undefined, "");
+        monthlyPanel.orientation = "column";
+        monthlyPanel.alignChildren = ["fill","top"];
+        monthlyPanel.margins = 8;
+        monthlyPanel.spacing = 4;
 
-    var btnYearly  = buttons.add("button", undefined, "Get Yearly");
-    var btnMonthly = buttons.add("button", undefined, "Get Monthly");
+        var monthlyHeader = monthlyPanel.add("group");
+        monthlyHeader.orientation = "row";
+        monthlyHeader.alignChildren = ["left","center"];
+        var monthlyLabel = monthlyHeader.add("statictext", undefined, "Monthly");
+        try {
+            monthlyLabel.graphics.font = ScriptUI.newFont(
+                monthlyLabel.graphics.font.name,
+                ScriptUI.FontStyle.BOLD,
+                monthlyLabel.graphics.font.size
+            );
+        } catch(e){}
+        monthlyHeader.add("statictext", undefined, " — US$7.90/month");
 
-    // Same size for both buttons
-    btnYearly.preferredSize  = [130, 28];
-    btnMonthly.preferredSize = [130, 28];
+        monthlyPanel.add("statictext", undefined, "- Full access to all features.");
+        monthlyPanel.add("statictext", undefined, "- Flexible option for freelancers and small teams.");
 
-    // Prefer Yearly slightly highlighted (text tint)
-    try {
-        var g = btnYearly.graphics;
-        var bluePen = g.newPen(g.PenType.SOLID_COLOR, [0.2, 0.6, 1.0, 1], 1);
-        g.foregroundColor = bluePen;
-    } catch(e){}
+        // ===== Buttons: side by side, same size =====
+        var buttons = dlg.add("group");
+        buttons.orientation = "row";
+        buttons.alignChildren = ["center","center"];
+        buttons.alignment = ["center","top"];
+        buttons.spacing = 10;
 
-    var URL_YEARLY  = "https://buy.cultextensions.com/b/3cI28sds1d1B5VW3jg2VG04?utm_source=yearly";
-    var URL_MONTHLY = "https://buy.cultextensions.com/b/fZuaEYew53r12JKaLI2VG03?utm_source=monthly";
+        var btnYearly  = buttons.add("button", undefined, "Get Yearly");
+        var btnMonthly = buttons.add("button", undefined, "Get Monthly");
 
-    btnYearly.onClick = function(){
-        openUrl(URL_YEARLY);
-        dlg.close();
-    };
-    btnMonthly.onClick = function(){
-        openUrl(URL_MONTHLY);
-        dlg.close();
-    };
+        // Same size for both buttons
+        btnYearly.preferredSize  = [130, 28];
+        btnMonthly.preferredSize = [130, 28];
 
-    dlg.center();
-    dlg.show();
-}
+        // Prefer Yearly slightly highlighted (text tint)
+        try {
+            var g = btnYearly.graphics;
+            var bluePen = g.newPen(g.PenType.SOLID_COLOR, [0.2, 0.6, 1.0, 1], 1);
+            g.foregroundColor = bluePen;
+        } catch(e){}
+
+        var URL_YEARLY  = "https://buy.cultextensions.com/b/3cI28sds1d1B5VW3jg2VG04?utm_source=yearly";
+        var URL_MONTHLY = "https://buy.cultextensions.com/b/fZuaEYew53r12JKaLI2VG03?utm_source=monthly";
+
+        btnYearly.onClick = function(){
+            openUrl(URL_YEARLY);
+            dlg.close();
+        };
+        btnMonthly.onClick = function(){
+            openUrl(URL_MONTHLY);
+            dlg.close();
+        };
+
+        dlg.center();
+        dlg.show();
+    }
 
     // Final production version: no debug files, no leftover logs.
     // layerCount = total number of text layers being translated in this run
@@ -596,8 +600,8 @@
                     app.endUndoGroup();
                     var reason;
                     if (isTrialLimit) {
-                        reason = "The free trial is limited to 100 text layers per translation.\n\n" +
-                                 "To keep using Cult Translator with larger compositions, choose a plan below.";
+                        reason = "The free trial is limited to 100 text layers in total.\n\n" +
+                                 "To keep using Cult Translator for larger projects and ongoing work, choose a plan below.";
                     } else {
                         reason = "To continue enjoying Cult Translator in your daily workflow, choose a plan below.";
                     }
