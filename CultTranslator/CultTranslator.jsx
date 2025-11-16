@@ -59,6 +59,19 @@
     function run(cmd){ try{ return system.callSystem(cmd) || ""; }catch(e){ return ""; } }
     function alertIf(s){ try{ alert(s); }catch(e){} }
 
+    function openUrl(url) {
+        if (!url) return;
+        try {
+            if (IS_WIN) {
+                run('cmd /c start "" "' + url + '"');
+            } else {
+                run('/usr/bin/open "' + url + '"');
+            }
+        } catch (e) {
+            alertIf("Please open this URL in your browser:\n\n" + url);
+        }
+    }
+
     // --- universalized matchNames for text access ---
     var TEXT_PROPS_MATCHNAME = "ADBE Text Properties";
     var TEXT_DOC_MATCHNAME   = "ADBE Text Document";
@@ -201,8 +214,87 @@
         return s;
     }
 
+    function showTrialUpgradeDialog(reasonText){
+        var dlg = new Window("dialog", "Cult Translator — Upgrade");
+        dlg.orientation = "column";
+        dlg.alignChildren = ["fill","top"];
+        dlg.margins = 16;
+        dlg.spacing = 10;
+
+        var msg = dlg.add("statictext", undefined, "You’ve reached the limits of the free trial.", {multiline:true});
+        msg.maximumSize.width = 380;
+
+        var msg2 = dlg.add("statictext", undefined,
+            reasonText || "To continue using Cult Translator without interruptions, choose a plan below.",
+            {multiline:true}
+        );
+        msg2.maximumSize.width = 380;
+
+        var groupPlans = dlg.add("group");
+        groupPlans.orientation = "column";
+        groupPlans.alignChildren = ["fill","top"];
+        groupPlans.spacing = 6;
+
+        // Yearly
+        var yearlyGroup = groupPlans.add("group");
+        yearlyGroup.orientation = "column";
+        yearlyGroup.alignChildren = ["fill","top"];
+        var yearlyTitle = yearlyGroup.add("statictext", undefined, "Yearly — Save 35% · US$59/year");
+        try {
+            yearlyTitle.graphics.font = ScriptUI.newFont(
+                yearlyTitle.graphics.font.name,
+                ScriptUI.FontStyle.BOLD,
+                yearlyTitle.graphics.font.size
+            );
+        } catch(e){}
+        yearlyGroup.add("statictext", undefined, "- Our most popular plan.");
+        yearlyGroup.add("statictext", undefined, "- Full access to all features.");
+        yearlyGroup.add("statictext", undefined, "- Ideal for studios, agencies and teams.");
+
+        // Monthly
+        var monthlyGroup = groupPlans.add("group");
+        monthlyGroup.orientation = "column";
+        monthlyGroup.alignChildren = ["fill","top"];
+        var monthlyTitle = monthlyGroup.add("statictext", undefined, "Monthly — US$7.90/month");
+        try {
+            monthlyTitle.graphics.font = ScriptUI.newFont(
+                monthlyTitle.graphics.font.name,
+                ScriptUI.FontStyle.BOLD,
+                monthlyTitle.graphics.font.size
+            );
+        } catch(e){}
+        monthlyGroup.add("statictext", undefined, "- Full access to all features.");
+        monthlyGroup.add("statictext", undefined, "- Flexible option for freelancers and small teams.");
+
+        var buttons = dlg.add("group");
+        buttons.orientation = "row";
+        buttons.alignChildren = ["center","center"];
+        buttons.spacing = 10;
+
+        var btnYearly  = buttons.add("button", undefined, "Get Yearly");
+        var btnMonthly = buttons.add("button", undefined, "Get Monthly");
+        var btnClose   = buttons.add("button", undefined, "Close");
+
+        var URL_YEARLY  = "https://buy.cultextensions.com/b/3cI28sds1d1B5VW3jg2VG04?utm_source=yearly";
+        var URL_MONTHLY = "https://buy.cultextensions.com/b/fZuaEYew53r12JKaLI2VG03?utm_source=monthly";
+
+        btnYearly.onClick = function(){
+            openUrl(URL_YEARLY);
+            dlg.close();
+        };
+        btnMonthly.onClick = function(){
+            openUrl(URL_MONTHLY);
+            dlg.close();
+        };
+        btnClose.onClick = function(){ dlg.close(); };
+
+        dlg.center();
+        dlg.show();
+    }
+
     // Final production version: no debug files, no leftover logs.
-    function callOpenAI(payloadJSON, licenseKey, docsBase){
+    // layerCount = total number of text layers being translated in this run
+    function callOpenAI(payloadJSON, licenseKey, docsBase, layerCount){
         var TMP = Folder.temp;
         var TS  = "" + (new Date().getTime());
         var base = (docsBase||"AE_GPT_UI") + "_" + TS + "_";
@@ -218,6 +310,7 @@
         }
 
         var DEVICE_ID = getDeviceId();
+        var LAYERS = (typeof layerCount === "number" && layerCount > 0) ? layerCount : 0;
 
         // Curl command — no inline echo, fully quote-safe
         var cmd = CURL + ' -4 --http1.1 --noproxy "*" -sS ' +
@@ -226,7 +319,8 @@
                   '-X POST ' +
                   '-H "x-license-key: ' + licenseKey + '" ' +
                   '-H "x-device-id: ' + DEVICE_ID + '" ' +
-                  '-H "x-device-name: ' + DEVICE_ID + '" ' + // optional, helps your admin view
+                  '-H "x-device-name: ' + DEVICE_ID + '" ' +
+                  '-H "x-layer-count: ' + LAYERS + '" ' +
                   '-H "Content-Type: application/json" ' +
                   '--data-binary @"' + REQ.fsName + '" ' +
                   '-o "' + RES.fsName + '" ' +
@@ -425,6 +519,9 @@
 
             if (texts.length === 0) { alertIf("All selected text layers are empty."); return; }
 
+            // Total text layers to be translated in this run (sent to server for 100-layer trial cap)
+            var totalLayerCount = texts.length;
+
             var MAX_ITEMS_PER_CALL = 8; // stability
             var updatedTotal = 0;
 
@@ -442,7 +539,33 @@
                 }
 
                 var payload = buildPayloadForChunk(chunkItems, srcLang, tgtLang, ctx);
-                var resp = callOpenAI(payload, license, "AE_GPT_UI_BATCH");
+                var resp = callOpenAI(payload, license, "AE_GPT_UI_BATCH", totalLayerCount);
+
+                // Detect trial-specific errors (expired or layer cap) and show upgrade dialog
+                var isTrialLimit = false;
+                var isTrialExpired = false;
+                if (resp && resp.http === "403") {
+                    var lowerBody = (resp.body || "").toLowerCase();
+                    if (lowerBody.indexOf("trial_limit_exceeded") !== -1) {
+                        isTrialLimit = true;
+                    } else if (lowerBody.indexOf("trial expired") !== -1) {
+                        isTrialExpired = true;
+                    }
+                }
+
+                if (isTrialLimit || isTrialExpired) {
+                    app.endUndoGroup();
+                    var reason;
+                    if (isTrialLimit) {
+                        reason = "The free trial is limited to 100 text layers per translation.\n\n" +
+                                 "To keep using Cult Translator with larger compositions, choose a plan below.";
+                    } else {
+                        reason = "Your free trial has ended.\n\n" +
+                                 "To continue enjoying Cult Translator in your daily workflow, choose a plan below.";
+                    }
+                    showTrialUpgradeDialog(reason);
+                    return;
+                }
 
                 // proceed if HTTP is 200 OR the body clearly contains assistant content
                 var hasAssistantContent = resp && resp.body && resp.body.indexOf('"content"') !== -1;
