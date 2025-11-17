@@ -269,7 +269,7 @@
                 yearlyLabel.graphics.font.size
             );
         } catch(e){}
-        yearlyHeader.add("statictext", undefined, " — Save 35% · US$59/year");
+        yearlyHeader.add("statictext", undefined, " — Save 35% · US$59/yr");
 
         yearlyPanel.add("statictext", undefined, "- Our most popular plan.");
         yearlyPanel.add("statictext", undefined, "- Full access to all features.");
@@ -293,7 +293,7 @@
                 monthlyLabel.graphics.font.size
             );
         } catch(e){}
-        monthlyHeader.add("statictext", undefined, " — US$7.90/month");
+        monthlyHeader.add("statictext", undefined, " — US$7.90/mo");
 
         monthlyPanel.add("statictext", undefined, "- Full access to all features.");
         monthlyPanel.add("statictext", undefined, "- Flexible option for freelancers and small teams.");
