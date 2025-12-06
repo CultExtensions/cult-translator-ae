@@ -15,7 +15,7 @@
 
     // ---- constants ----
     var IS_WIN = ($.os && $.os.indexOf("Windows") === 0);
-    var CURL   = IS_WIN ? "curl" : "/usr/bin/curl"; // or hardcode: "C:\\Windows\\System32\\curl.exe"
+    var CURL = IS_WIN ? "C:\\Windows\\System32\\curl.exe" : "/usr/bin/curl";
     var MODEL  = "gpt-4o-mini"; // you can change to "gpt-4o" if desired
 
     // Toggle to quickly see license/curl info once; leave false for production
@@ -105,26 +105,61 @@
     }
 
     // --- LICENSE: website build uses embedded LICENSE_KEY only ---
-    function ensureLicense(){
-        var k = trim(LICENSE_KEY || "");
-        if (!k || k === "LICENSE") {
-            alertIf(
-                "Missing license.\n\n" +
-                "Please re-download Cult Translator from your personalized link " +
-                "and reinstall via:\n\n" +
-                "File → Scripts → Install ScriptUI Panel…"
-            );
-            return "";
-        }
-        return k;
+// --- LICENSE: embedded key OR license.json fallback ---
+var CACHED_LICENSE_KEY = null;
+
+function loadLicenseFromJson() {
+    if (CACHED_LICENSE_KEY && CACHED_LICENSE_KEY !== "LICENSE") {
+        return CACHED_LICENSE_KEY;
     }
 
-    // Silent peek (for UI color at startup) — no popups if missing
-    function peekLicense(){
-        var k = trim(LICENSE_KEY || "");
-        if (!k || k === "LICENSE") return "";
-        return k;
+    try {
+        var scriptFile = new File($.fileName);
+        var folder = scriptFile.parent;
+        if (!folder) return "";
+
+        var lic = new File(folder.fsName + "/license.json");
+        if (!lic.exists) return "";
+
+        var raw = readTextFile(lic);
+        if (!raw) return "";
+
+        // extract "license": "XXX"
+        var m = raw.match(/"license"\s*:\s*"([^"]+)"/);
+        if (m && m[1]) {
+            CACHED_LICENSE_KEY = trim(m[1]);
+            return CACHED_LICENSE_KEY;
+        }
+    } catch(e){}
+
+    return "";
+}
+
+function ensureLicense(){
+    var k = trim(LICENSE_KEY || "");
+
+    if (!k || k === "LICENSE") {
+        k = loadLicenseFromJson();
     }
+
+    if (!k) {
+        alert("Missing license.\n\nPlease re-download Cult Translator.");
+        return "";
+    }
+
+    CACHED_LICENSE_KEY = k;
+    return k;
+}
+
+function peekLicense(){
+    var k = trim(LICENSE_KEY || "");
+    if (!k || k === "LICENSE") {
+        k = loadLicenseFromJson();
+    }
+    if (!k) return "";
+    CACHED_LICENSE_KEY = k;
+    return k;
+}
 
     function getActiveComp(){
         var c = app.project && app.project.activeItem;
