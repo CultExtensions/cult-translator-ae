@@ -15,7 +15,8 @@
 
     // ---- constants ----
     var IS_WIN = ($.os && $.os.indexOf("Windows") === 0);
-    var CURL = IS_WIN ? "C:\\Windows\\System32\\curl.exe" : "/usr/bin/curl";
+    // ✅ Updated: hardcode default Windows curl path
+    var CURL   = IS_WIN ? "C:\\Windows\\System32\\curl.exe" : "/usr/bin/curl";
     var MODEL  = "gpt-4o-mini"; // you can change to "gpt-4o" if desired
 
     // Toggle to quickly see license/curl info once; leave false for production
@@ -104,62 +105,77 @@
         return name.replace(/[\r\n\t"'\`]/g, ' ');
     }
 
-    // --- LICENSE: website build uses embedded LICENSE_KEY only ---
-// --- LICENSE: embedded key OR license.json fallback ---
-var CACHED_LICENSE_KEY = null;
+    // --- LICENSE: website build uses embedded LICENSE_KEY + optional license.json ---
+    var CACHED_LICENSE = null;
 
-function loadLicenseFromJson() {
-    if (CACHED_LICENSE_KEY && CACHED_LICENSE_KEY !== "LICENSE") {
-        return CACHED_LICENSE_KEY;
-    }
+    function readLicenseJson() {
+        try {
+            var here = File($.fileName);
+            var folder = here.parent;
+            if (!folder || !folder.exists) return null;
 
-    try {
-        var scriptFile = new File($.fileName);
-        var folder = scriptFile.parent;
-        if (!folder) return "";
+            var licFile = new File(folder.fsName + "/license.json");
+            if (!licFile.exists) return null;
 
-        var lic = new File(folder.fsName + "/license.json");
-        if (!lic.exists) return "";
+            licFile.encoding = "UTF-8";
+            if (!licFile.open("r")) return null;
+            var txt = licFile.read();
+            licFile.close();
 
-        var raw = readTextFile(lic);
-        if (!raw) return "";
+            txt = trim(txt || "");
+            if (!txt) return null;
 
-        // extract "license": "XXX"
-        var m = raw.match(/"license"\s*:\s*"([^"]+)"/);
-        if (m && m[1]) {
-            CACHED_LICENSE_KEY = trim(m[1]);
-            return CACHED_LICENSE_KEY;
+            // Very small regex-based JSON parse: "license": "KEY"
+            var m = txt.match(/"license"\s*:\s*"([^"]+)"/);
+            if (m && m[1]) {
+                var key = trim(m[1]);
+                if (key) return key;
+            }
+            return null;
+        } catch (e) {
+            return null;
         }
-    } catch(e){}
-
-    return "";
-}
-
-function ensureLicense(){
-    var k = trim(LICENSE_KEY || "");
-
-    if (!k || k === "LICENSE") {
-        k = loadLicenseFromJson();
     }
 
-    if (!k) {
-        alert("Missing license.\n\nPlease re-download Cult Translator.");
-        return "";
+    function ensureLicense(){
+        if (CACHED_LICENSE === null) {
+            // 1) Try license.json next to this script
+            var fromJson = readLicenseJson();
+            if (fromJson) {
+                CACHED_LICENSE = fromJson;
+            } else {
+                // 2) Fallback: embedded LICENSE_KEY (for website builds)
+                var embedded = trim(LICENSE_KEY || "");
+                CACHED_LICENSE = (embedded && embedded !== "LICENSE") ? embedded : "";
+            }
+        }
+
+        var k = CACHED_LICENSE || "";
+        if (!k) {
+            alertIf(
+                "Missing license.\n\n" +
+                "Please re-download Cult Translator from your personalized link " +
+                "and reinstall via:\n\n" +
+                "File → Scripts → Install ScriptUI Panel…"
+            );
+            return "";
+        }
+        return k;
     }
 
-    CACHED_LICENSE_KEY = k;
-    return k;
-}
-
-function peekLicense(){
-    var k = trim(LICENSE_KEY || "");
-    if (!k || k === "LICENSE") {
-        k = loadLicenseFromJson();
+    // Silent peek (for UI color at startup) — no popups if missing
+    function peekLicense(){
+        if (CACHED_LICENSE === null) {
+            var fromJson = readLicenseJson();
+            if (fromJson) {
+                CACHED_LICENSE = fromJson;
+            } else {
+                var embedded = trim(LICENSE_KEY || "");
+                CACHED_LICENSE = (embedded && embedded !== "LICENSE") ? embedded : "";
+            }
+        }
+        return CACHED_LICENSE || "";
     }
-    if (!k) return "";
-    CACHED_LICENSE_KEY = k;
-    return k;
-}
 
     function getActiveComp(){
         var c = app.project && app.project.activeItem;
@@ -266,60 +282,44 @@ function peekLicense(){
     }
 
     // ---------- PRO CHECK (server-side) ----------
-function checkIsPro(licenseKey) {
-    if (!licenseKey) return false;
-    try {
-        var url = SERVER_BASE + "/license/features";
-        var TMP = Folder.temp;
+    // ✅ Simplified for Windows: ignore HTTP status file, trust JSON body.
+    function checkIsPro(licenseKey) {
+        if (!licenseKey) return false;
+        try {
+            var url = SERVER_BASE + "/license/features";
+            var TMP = Folder.temp;
 
-        // Separate files for body + HTTP status (like callOpenAI)
-        var bodyFile   = new File(TMP.fsName + "/ct_features_body_"   + (new Date().getTime()) + ".json");
-        var statusFile = new File(TMP.fsName + "/ct_features_status_" + (new Date().getTime()) + ".txt");
+            // Separate files for body + HTTP status (status file only for debugging/cleanup)
+            var bodyFile   = new File(TMP.fsName + "/ct_features_body_"   + (new Date().getTime()) + ".json");
+            var statusFile = new File(TMP.fsName + "/ct_features_status_" + (new Date().getTime()) + ".txt");
 
-        var cmd =
-            CURL + ' -4 --http1.1 --noproxy "*" -sS ' +
-            '--connect-timeout 10 --max-time 30 ' +
-            '--retry 1 --retry-delay 1 --retry-connrefused ' +
-            '-H "x-license-key: ' + licenseKey + '" ' +
-            '"' + url + '" ' +
-            '-o "' + bodyFile.fsName + '" ' +
-            '-w "%{http_code}" > "' + statusFile.fsName + '" 2>&1';
+            var cmd =
+                CURL + ' -4 --http1.1 --noproxy "*" -sS ' +
+                '--connect-timeout 10 --max-time 30 ' +
+                '--retry 1 --retry-delay 1 --retry-connrefused ' +
+                '-H "x-license-key: ' + licenseKey + '" ' +
+                '"' + url + '" ' +
+                '-o "' + bodyFile.fsName + '" ' +
+                '-w "%{http_code}" > "' + statusFile.fsName + '" 2>&1';
 
-        var out = run(cmd); // stderr / curl logs if any (often empty)
+            run(cmd); // stderr/logs ignored
 
-        var statusText = trim(readTextFile(statusFile));
-        var bodyText   = readTextFile(bodyFile);
+            var bodyText   = readTextFile(bodyFile);
 
-        try { bodyFile.remove();   } catch(e){}
-        try { statusFile.remove(); } catch(e){}
+            try { bodyFile.remove();   } catch(e){}
+            try { statusFile.remove(); } catch(e){}
 
-        // TEMP: if you want to debug once on Windows, uncomment:
-        // alertIf("checkIsPro debug:\n\nstatus raw: " + statusText + "\n\nbody:\n" + (bodyText || "(empty)"));
+            if (!bodyText) return false;
 
-        // statusText usually ends with the HTTP code, but may have logs before it.
-        if (statusText && statusText.length > 3) {
-            statusText = statusText.substr(statusText.length - 3);
+            if (bodyText.indexOf('"is_pro":true') !== -1 ||
+                bodyText.indexOf('"is_pro": true') !== -1) {
+                return true;
+            }
+        } catch (e) {
+            // Fail closed but don't crash UI
         }
-
-        if (statusText !== "200") {
-            // Non-200 → treat as not PRO (network / TLS / whatever)
-            return false;
-        }
-
-        if (!bodyText) return false;
-
-        // Same detection, but after we know it’s HTTP 200
-        if (bodyText.indexOf('"is_pro":true') !== -1 ||
-            bodyText.indexOf('"is_pro": true') !== -1) {
-            return true;
-        }
-    } catch (e) {
-        // If anything blows up, fail closed but don’t crash UI
-        // alertIf("checkIsPro error: " + e); // uncomment if needed
+        return false;
     }
-    return false;
-}
-
 
     function ensureProStatus(licenseKey) {
         if (cachedIsPro === null) {
@@ -588,9 +588,9 @@ function checkIsPro(licenseKey) {
         btnMonthly.preferredSize = [130, 28];
 
         try {
-            var g = btnYearly.graphics;
-            var bluePen = g.newPen(g.PenType.SOLID_COLOR, [0.2, 0.6, 1.0, 1], 1);
-            g.foregroundColor = bluePen;
+            var g2 = btnYearly.graphics;
+            var bluePen2 = g2.newPen(g2.PenType.SOLID_COLOR, [0.2, 0.6, 1.0, 1], 1);
+            g2.foregroundColor = bluePen2;
         } catch(e){}
 
         var URL_YEARLY  = "https://buy.cultextensions.com/b/3cI28sds1d1B5VW3jg2VG04?utm_source=yearly";
@@ -783,9 +783,9 @@ function checkIsPro(licenseKey) {
             found++;
         }
 
-        var i;
-        for (i=0; i<expectedCount; i++){
-            if (results[i] === undefined) results[i] = "";
+        var i2;
+        for (i2=0; i2<expectedCount; i2++){
+            if (results[i2] === undefined) results[i2] = "";
         }
         return results;
     }
@@ -1217,14 +1217,14 @@ function checkIsPro(licenseKey) {
                     translated = trim(translated);
 
                     if (translated.length){
-                        var p = chunkPtrs[j];
-                        p.doc.text = translated;
-                        p.sp.setValue(p.doc);
+                        var p2 = chunkPtrs[j];
+                        p2.doc.text = translated;
+                        p2.sp.setValue(p2.doc);
                         updatedTotal++;
                     }
                 }
 
-                pos = endIdx;
+            pos = endIdx;
             }
 
             app.endUndoGroup();
